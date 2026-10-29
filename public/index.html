@@ -1,0 +1,422 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kiếm Vực - Đấu Kiếm</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#070d19;color:#eef6ff;font-family:Arial,sans-serif}
+header{height:72px;padding:12px 22px;display:flex;align-items:center;
+background:linear-gradient(90deg,#101c32,#080d18);border-bottom:1px solid #304969}
+.logo{font-size:30px;color:#ffd783;margin-right:12px}
+h1{font-size:21px;letter-spacing:3px;margin:0}
+header small{color:#9db7d2;letter-spacing:2px}
+#status{margin-left:auto;color:#77efb0;font-size:12px}
+main{max-width:1250px;margin:auto;padding:14px}
+#stage{position:relative;border:1px solid #456180;border-radius:12px;overflow:hidden;
+box-shadow:0 0 35px #1d4e7733;background:#101c2b}
+canvas{display:block;width:100%;height:auto}
+.hud{position:absolute;top:12px;left:12px;right:12px;display:flex;
+justify-content:space-between;gap:10px;pointer-events:none}
+.card{padding:10px 13px;background:#081321df;border:1px solid #46617e;border-radius:9px}
+#name{font-weight:bold}#hp{width:180px;height:8px;background:#4a2534;margin-top:7px}
+#hpbar{height:100%;width:100%;background:linear-gradient(90deg,#ff385e,#ff9b88)}
+#hptext{font-size:10px;color:#c6d4e4;margin-top:3px}
+#mapname{color:#ffd783;font-weight:bold}
+#toast{position:absolute;top:100px;left:50%;transform:translateX(-50%);
+background:#07111de8;padding:9px 15px;border:1px solid #46617e;
+border-radius:20px;font-size:12px;text-align:center;max-width:90%}
+#maps{display:flex;gap:6px;flex-wrap:wrap;padding:10px;background:#0a1321}
+button{cursor:pointer;color:#edf6ff;background:#14243a;border:1px solid #38536f;
+padding:9px;border-radius:7px}
+button:hover,button.active{border-color:#ffd783;color:#ffd783}
+.panels{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-top:12px}
+.panel{background:linear-gradient(145deg,#101d30,#09111e);border:1px solid #304969;
+border-radius:11px;padding:14px}
+h2{font-size:16px;margin:0 0 12px;color:#ffd783}
+.skills{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.skill{min-height:105px;text-align:left;padding:8px}
+.symbol{display:block;font-size:28px;margin:4px 0;color:#72ddff}
+.skill b{display:block;font-size:12px}.skill small{font-size:10px;color:#a6bad0}
+.key{float:right;background:#07101c;padding:3px 5px;border-radius:4px;font-size:10px}
+.stats{display:flex;gap:8px}.stat{flex:1;padding:10px;background:#142238;border-radius:7px}
+.stat small{display:block;color:#a6bad0;font-size:10px}.stat b{display:block;margin-top:5px}
+#feed{font-size:12px;color:#a9c0d7;margin-top:12px;line-height:1.6}
+footer{text-align:center;color:#809ab6;padding:18px;font-size:11px}
+@media(max-width:650px){main{padding:6px}.panels{grid-template-columns:1fr}
+.skills{grid-template-columns:repeat(2,1fr)}#hp{width:110px}
+header{padding:10px}#status{display:none}.hud{top:5px;left:5px;right:5px}
+.card{padding:7px;font-size:12px}#toast{top:75px;font-size:10px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="logo">⚔</div>
+ <div><h1>KIẾM VỰC</h1><small>ĐẤU KIẾM HUYỀN THOẠI</small></div>
+ <div id="status">● CHẾ ĐỘ LUYỆN TẬP</div>
+</header>
+<main>
+<section id="stage">
+ <canvas id="game" width="1200" height="650"></canvas>
+ <div class="hud">
+  <div class="card">
+   <div id="name">Kiếm Khách</div>
+   <div style="font-size:10px;color:#9db7d2;margin-top:4px">KIẾM SĨ LANG BẠT</div>
+   <div id="hp"><div id="hpbar"></div></div>
+   <div id="hptext">100 / 100 HP</div>
+  </div>
+  <div class="card">ĐỊA VỰC<br><span id="mapname">Làng Cổ</span></div>
+ </div>
+ <div id="toast">WASD di chuyển · J/K/L chiến đấu · Q + E tuyệt kỹ</div>
+ <div id="maps">
+  <button data-map="Rừng Tuyết">❄ Rừng Tuyết</button>
+  <button class="active" data-map="Làng Cổ">🏮 Làng Cổ</button>
+  <button data-map="Sa Mạc">☀ Sa Mạc</button>
+  <button data-map="Đảo Trên Mây">☁ Đảo Trên Mây</button>
+  <button data-map="Hỏa Sơn">🔥 Hỏa Sơn</button>
+  <button data-map="Thành Đô">🏯 Thành Đô</button>
+ </div>
+</section>
+<div class="panels">
+ <section class="panel">
+  <h2>✦ HỆ THỐNG KIẾM THUẬT</h2>
+  <div class="skills">
+   <button class="skill" onclick="skill('slash')"><span class="key">J</span>
+    <span class="symbol" style="color:#ff5577">⚔</span><b>Toái Nguyệt</b>
+    <small>Chém kiếm nhanh</small></button>
+   <button class="skill" onclick="skill('ice')"><span class="key">K</span>
+    <span class="symbol">❄</span><b>Băng Phách</b>
+    <small>Kiếm khí tầm xa</small></button>
+   <button class="skill" onclick="skill('dash')"><span class="key">L</span>
+    <span class="symbol" style="color:#c6a1ff">➤</span><b>Ảnh Bộ</b>
+    <small>Lướt nhanh</small></button>
+   <button class="skill" onclick="skill('ult')"><span class="key">Q+E</span>
+    <span class="symbol" style="color:#ffd783">龍</span><b>Long Trảm</b>
+    <small>Tuyệt kỹ diện rộng</small></button>
+  </div>
+  <p style="font-size:11px;color:#9db7d2;margin-bottom:0">
+   COMBO: <b>J → J → K → Q + E</b> — Nguyệt Ảnh Liên Trảm
+  </p>
+ </section>
+ <section class="panel">
+  <h2>◆ THÔNG TIN TRẬN ĐẤU</h2>
+  <div class="stats">
+   <div class="stat"><small>Hạ gục</small><b id="kills">0</b></div>
+   <div class="stat"><small>Kẻ địch</small><b id="enemies">5</b></div>
+   <div class="stat"><small>Địa hình</small><b id="terrain">Làng Cổ</b></div>
+  </div>
+  <div id="feed">Bạn đã bước vào Kiếm Vực. Hãy sẵn sàng chiến đấu!</div>
+  <button onclick="rename()" style="margin-top:10px">✎ Đổi tên nhân vật</button>
+ </section>
+</div>
+</main>
+<footer>KIẾM VỰC — Mỗi đường kiếm viết nên một huyền thoại.</footer>
+
+<script>
+const canvas=document.getElementById('game');
+const c=canvas.getContext('2d');
+const W=1200,H=650;
+const $=id=>document.getElementById(id);
+
+const terrain={
+ 'Rừng Tuyết':{sky:'#789eae',ground:'#d8e7e9',accent:'#8beaff',trait:'Băng tuyết'},
+ 'Làng Cổ':{sky:'#526b80',ground:'#8e7766',accent:'#ffca79',trait:'Ngõ nhỏ và nhà cổ'},
+ 'Sa Mạc':{sky:'#e4b477',ground:'#c99453',accent:'#ffe49b',trait:'Cồn cát'},
+ 'Đảo Trên Mây':{sky:'#75bde0',ground:'#b9d8dc',accent:'#c9f5ff',trait:'Đảo nổi trên mây'},
+ 'Hỏa Sơn':{sky:'#44323e',ground:'#352a31',accent:'#ff613e',trait:'Dung nham nguy hiểm'},
+ 'Thành Đô':{sky:'#465c79',ground:'#777382',accent:'#d4b4ff',trait:'Phố cổ nhiều ngõ'}
+};
+
+let map='Làng Cổ',keys={},particles=[],arcs=[],kills=0;
+let player={x:580,y:390,hp:100,face:1,step:0};
+let foes=[];
+function resetFoes(){
+ foes=[];
+ for(let i=0;i<5;i++)foes.push({
+  x:150+i*220,y:260+(i%2)*150,hp:50,phase:Math.random()*8,hit:0
+ });
+}
+resetFoes();
+
+function rand(a,b){return a+Math.random()*(b-a)}
+function particle(x,y,color,n=16){
+ for(let i=0;i<n;i++){
+  let a=rand(0,Math.PI*2),v=rand(1,6);
+  particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,
+   life:rand(15,35),color,size:rand(2,5)});
+ }
+}
+function notify(s){
+ $('toast').textContent=s;
+ clearTimeout(notify.timer);
+ notify.timer=setTimeout(()=>$('toast').textContent=
+ 'WASD di chuyển · J/K/L chiến đấu · Q + E tuyệt kỹ',1500);
+}
+function rename(){
+ let n=prompt('Tên kiếm khách của bạn là gì?',$('name').textContent);
+ if(n&&n.trim())$('name').textContent=n.trim().slice(0,20);
+}
+function changeMap(n){
+ map=n;$('mapname').textContent=n;$('terrain').textContent=n;
+ document.querySelectorAll('[data-map]').forEach(b=>
+ b.classList.toggle('active',b.dataset.map===n));
+ particle(player.x,player.y,terrain[n].accent,45);
+ resetFoes();
+ notify('Đã tới '+n+' — '+terrain[n].trait);
+}
+document.querySelectorAll('[data-map]').forEach(b=>
+ b.onclick=()=>changeMap(b.dataset.map));
+
+function skill(kind){
+ let color={slash:'#ff4569',ice:'#67eaff',dash:'#c6a0ff',ult:'#ffd16a'}[kind];
+ if(kind==='dash'){
+  player.x=Math.max(35,Math.min(W-35,player.x+player.face*125));
+  particle(player.x-player.face*60,player.y,color,25);
+ }else{
+  arcs.push({x:player.x,y:player.y-35,face:player.face,
+   kind,life:kind==='ult'?36:22});
+  particle(player.x+player.face*55,player.y-30,color,kind==='ult'?55:24);
+  foes.forEach(e=>{
+   let range=kind==='ult'?230:kind==='ice'?300:110;
+   if(Math.abs(e.x-player.x)<range&&Math.abs(e.y-player.y)<125){
+    e.hp-=kind==='ult'?35:kind==='ice'?22:16;
+    e.hit=10;particle(e.x,e.y-25,color,18);
+    if(e.hp<=0){
+     kills++;$('kills').textContent=kills;
+     e.hp=50;e.x=rand(100,1100);e.y=rand(220,560);
+    }
+   }
+  });
+ }
+ const names={slash:'TOÁI NGUYỆT!',ice:'BĂNG PHÁCH!',dash:'ẢNH BỘ!',ult:'LONG TRẢM — TUYỆT KỸ!'};
+ $('feed').textContent='✦ '+names[kind]+' Kiếm khí bùng nổ trên chiến trường!';
+ notify(names[kind]);
+}
+function rounded(x,y,w,h,r,color){
+ c.fillStyle=color;c.beginPath();c.roundRect(x,y,w,h,r);c.fill();
+}
+
+function background(t){
+ let m=terrain[map],g=c.createLinearGradient(0,0,0,H);
+ g.addColorStop(0,m.sky);g.addColorStop(1,m.ground);
+ c.fillStyle=g;c.fillRect(0,0,W,H);
+
+ // Núi ở đường chân trời
+ for(let i=0;i<9;i++){
+  let x=i*160-30;
+  c.fillStyle=map==='Hỏa Sơn'?'#372b36':'#263e51';
+  c.globalAlpha=.35;c.beginPath();
+  c.moveTo(x,230);c.lineTo(x+75,80+(i%3)*25);c.lineTo(x+180,230);c.fill();
+ }
+ c.globalAlpha=1;
+
+ // Sàn đấu
+ c.strokeStyle='#ffffff20';c.lineWidth=1;
+ for(let y=240;y<H;y+=48){
+  c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke();
+ }
+ for(let x=0;x<W;x+=90){
+  c.beginPath();c.moveTo(x,220);c.lineTo(x-50,H);c.stroke();
+ }
+
+ // Chi tiết riêng từng bản đồ
+ if(map==='Làng Cổ'||map==='Thành Đô'){
+  for(let i=0;i<5;i++){
+   let x=i*255+20;
+   c.fillStyle='#45404a';c.fillRect(x,145,125,85);
+   c.fillStyle=map==='Làng Cổ'?'#9b594d':'#60536f';
+   c.beginPath();c.moveTo(x-12,150);c.lineTo(x+62,90);
+   c.lineTo(x+137,150);c.fill();
+   c.fillStyle='#f4bd70';c.fillRect(x+25,174,17,28);
+   c.fillRect(x+82,174,17,28);
+  }
+ }
+ if(map==='Rừng Tuyết'){
+  for(let i=0;i<8;i++){
+   let x=i*160+25;
+   c.fillStyle='#32616b';c.fillRect(x-5,150,12,80);
+   c.fillStyle='#477f83';c.beginPath();
+   c.moveTo(x-35,195);c.lineTo(x,85);c.lineTo(x+35,195);c.fill();
+   c.fillStyle='#edfaff';c.beginPath();
+   c.moveTo(x-19,140);c.lineTo(x,85);c.lineTo(x+17,140);c.fill();
+  }
+  for(let i=0;i<45;i++){
+   c.fillStyle='#fff';c.globalAlpha=.55;
+   c.fillRect((i*173+t*.025)%W,(i*89)%H,3,3);
+  }c.globalAlpha=1;
+ }
+ if(map==='Sa Mạc'){
+  for(let i=0;i<7;i++){
+   c.strokeStyle='#f8d397';c.lineWidth=3;c.beginPath();
+   c.ellipse(i*190-30,420+i%3*35,160,30,0,0,Math.PI);c.stroke();
+  }
+  for(let i=0;i<4;i++){
+   let x=i*310+70;c.fillStyle='#98724d';
+   c.fillRect(x,160,48,75);c.fillRect(x+48,190,30,45);
+  }
+ }
+ if(map==='Đảo Trên Mây'){
+  for(let i=0;i<6;i++){
+   let x=i*220+35,y=145+i%2*45;
+   c.fillStyle='#eafaff';c.beginPath();
+   c.ellipse(x,y,68,18,0,0,7);c.fill();
+   c.fillStyle='#729db5';c.beginPath();
+   c.moveTo(x-30,y+5);c.lineTo(x,y+65);c.lineTo(x+32,y+5);c.fill();
+  }
+ }
+ if(map==='Hỏa Sơn'){
+  for(let i=0;i<7;i++){
+   c.strokeStyle='#ff6037';c.lineWidth=7;c.beginPath();
+   c.moveTo(i*190-20,540);
+   c.bezierCurveTo(i*190+30,510,i*190+80,590,i*190+150,550);
+   c.stroke();
+  }
+ }
+}
+
+function fighter(x,y,face,color,phase,isPlayer,hit){
+ c.save();c.translate(x,y);c.scale(face,1);
+ let bob=Math.sin(phase)*2;
+ // Bóng
+ c.fillStyle='#0005';c.beginPath();c.ellipse(0,0,25,8,0,0,7);c.fill();
+ // Chân
+ c.strokeStyle='#172338';c.lineWidth=9;c.lineCap='round';
+ c.beginPath();c.moveTo(-7,-15+bob);c.lineTo(-12,-1);
+ c.moveTo(7,-15+bob);c.lineTo(12,-1);c.stroke();
+ // Áo choàng
+ c.fillStyle=hit?'#fff':color;c.beginPath();
+ c.moveTo(-14,-42+bob);c.lineTo(12,-42+bob);
+ c.lineTo(20,-8);c.lineTo(-18,-8);c.closePath();c.fill();
+ // Đầu
+ c.fillStyle='#18243a';c.beginPath();c.ellipse(0,-48+bob,13,15,0,0,7);c.fill();
+ c.fillStyle='#efc5a3';c.beginPath();c.arc(2,-48+bob,9,0,7);c.fill();
+ c.fillStyle='#171727';c.beginPath();
+ c.moveTo(-10,-53+bob);c.lineTo(8,-62+bob);
+ c.lineTo(17,-45+bob);c.lineTo(0,-52+bob);c.lineTo(-8,-41+bob);c.fill();
+ // Khăn bay
+ c.strokeStyle=isPlayer?'#ffd17b':'#ff8297';c.lineWidth=5;
+ c.beginPath();c.moveTo(-8,-36+bob);c.quadraticCurveTo(-28,-34,-31,-22+bob);c.stroke();
+ // Kiếm
+ c.save();c.rotate(-.4);
+ c.strokeStyle='#e5faff';c.lineWidth=4;c.beginPath();
+ c.moveTo(12,-29+bob);c.lineTo(38,-63+bob);c.stroke();
+ c.strokeStyle='#68dfff';c.lineWidth=1.5;c.beginPath();
+ c.moveTo(14,-29+bob);c.lineTo(40,-64+bob);c.stroke();
+ c.restore();
+ if(isPlayer){
+  c.fillStyle='#14233a';c.fillRect(-23,-77,46,5);
+  c.fillStyle='#70eaff';c.fillRect(-23,-77,46*player.hp/100,5);
+ }
+ c.restore();
+}
+
+function draw(t){
+ background(t);
+ // Chướng ngại vật
+ for(let i=0;i<7;i++){
+  let x=90+i*165,y=300+(i%3)*75;
+  if(Math.abs(x-player.x)<55&&Math.abs(y-player.y)<40)continue;
+  if(map==='Đảo Trên Mây')continue;
+  c.fillStyle='#0003';c.beginPath();c.ellipse(x,y,27,9,0,0,7);c.fill();
+  if(map==='Hỏa Sơn'){
+   c.fillStyle='#34303a';c.beginPath();c.moveTo(x-30,y);c.lineTo(x,y-48);c.lineTo(x+30,y);c.fill();
+   c.fillStyle='#ff613e';c.fillRect(x-3,y-25,6,23);
+  }else if(map==='Rừng Tuyết'){
+   c.fillStyle='#2f5b61';c.fillRect(x-5,y-30,10,30);
+   c.fillStyle='#4b898b';c.beginPath();c.moveTo(x-25,y-10);c.lineTo(x,y-65);c.lineTo(x+25,y-10);c.fill();
+  }else{
+   rounded(x-24,y-30,48,30,5,'#65564f');
+   c.fillStyle='#c3a16c';c.fillRect(x-14,y-20,9,9);
+  }
+ }
+ // Kẻ địch
+ foes.forEach(e=>{
+  fighter(e.x,e.y,e.x<player.x?1:-1,'#a54460',e.phase,false,e.hit>0);
+  c.fillStyle='#281b2a';c.fillRect(e.x-22,e.y-83,44,5);
+  c.fillStyle='#ff5878';c.fillRect(e.x-22,e.y-83,44*e.hp/50,5);
+ });
+ fighter(player.x,player.y,player.face,'#347ea9',player.step,true,false);
+
+ // Vòng chém và hiệu ứng kỹ năng
+ arcs.forEach(a=>{
+  c.save();c.translate(a.x,a.y);c.scale(a.face,1);
+  c.globalAlpha=Math.max(0,a.life/(a.kind==='ult'?36:22));
+  let col={slash:'#ff4569',ice:'#67eaff',dash:'#c6a0ff',ult:'#ffd16a'}[a.kind];
+  c.strokeStyle=col;c.shadowColor=col;c.shadowBlur=25;
+  c.lineWidth=a.kind==='ult'?13:7;
+  c.beginPath();c.arc(0,0,a.kind==='ult'?125:72,-1.15,.85);c.stroke();
+  if(a.kind==='ult'){
+   c.font='bold 45px serif';c.fillStyle='#ffe3a0';c.fillText('龍',35,-30);
+  }
+  if(a.kind==='ice'){
+   for(let i=0;i<5;i++){
+    c.fillStyle='#baf8ff';c.beginPath();
+    c.moveTo(40+i*27,-25);c.lineTo(52+i*27,-35);
+    c.lineTo(47+i*27,-12);c.fill();
+   }
+  }
+  c.restore();
+ });
+ c.globalAlpha=1;c.shadowBlur=0;
+
+ particles.forEach(p=>{
+  c.globalAlpha=Math.max(0,p.life/35);c.fillStyle=p.color;
+  c.shadowColor=p.color;c.shadowBlur=12;c.beginPath();
+  c.arc(p.x,p.y,p.size,0,7);c.fill();
+ });
+ c.globalAlpha=1;c.shadowBlur=0;
+ c.fillStyle='#07111bcc';c.fillRect(0,H-25,W,25);
+ c.fillStyle='#e7cb8e';c.font='bold 11px Arial';
+ c.fillText('KIẾM VỰC / '+map.toUpperCase(),14,H-9);
+}
+
+let last=0;
+function loop(t){
+ let dt=Math.min(40,t-(last||t));last=t;
+ let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0);
+ let dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);
+ if(dx||dy){
+  let len=Math.hypot(dx,dy);dx/=len;dy/=len;
+  let speed=keys.shift?8:4;
+  if(map==='Sa Mạc')speed*=.8;
+  if(map==='Rừng Tuyết')speed*=.9;
+  player.x+=dx*speed*dt/16;player.y+=dy*speed*dt/16;
+  if(dx)player.face=dx<0?-1:1;player.step+=dt*.01;
+ }
+ player.x=Math.max(35,Math.min(W-35,player.x));
+ player.y=Math.max(115,Math.min(H-30,player.y));
+
+ foes.forEach(e=>{
+  e.phase+=dt*.002;
+  e.x+=Math.sin(e.phase)*.5*dt/16;
+  e.y+=Math.cos(e.phase*.7)*.25*dt/16;
+  if(e.hit>0)e.hit--;
+  if(Math.hypot(e.x-player.x,e.y-player.y)<35){
+   player.hp-=dt*.003;
+   if(player.hp<=0){player.hp=100;player.x=580;player.y=390;notify('Bạn đã hồi sinh!');}
+  }
+ });
+ particles.forEach(p=>{p.x+=p.vx*dt/16;p.y+=p.vy*dt/16;p.vx*=.98;p.vy*=.98;p.life-=dt/16});
+ particles=particles.filter(p=>p.life>0);
+ arcs.forEach(a=>a.life-=dt/16);arcs=arcs.filter(a=>a.life>0);
+ $('hpbar').style.width=player.hp+'%';$('hptext').textContent=Math.ceil(player.hp)+' / 100 HP';
+ draw(t);requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+window.addEventListener('keydown',e=>{
+ let k=e.key.toLowerCase();
+ if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
+ keys[k]=true;if(e.repeat)return;
+ if(k==='j')skill('slash');
+ if(k==='k')skill('ice');
+ if(k==='l'||k==='shift')skill('dash');
+ if(k==='q')keys.q=true;
+ if(k==='e'&&keys.q){skill('ult');keys.q=false;}
+});
+window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+</script>
+</body>
+</html>
