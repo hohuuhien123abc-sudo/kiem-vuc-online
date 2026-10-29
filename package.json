@@ -1,13 +1,9 @@
 {
   "name": "kiem-vuc-online",
   "version": "1.0.0",
-  "description": "Game kiem hiep online",
+  "description": "Game dau kiem 2D online 4 nguoi dung Node.js va Socket.IO",
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^5.1.0",
-    "socket.io": "^4.8.1"
-  }
+  "scripts": {"start": "node server.js", "dev": "node server.js"},
+  "dependencies": {"express": "^4.21.2", "socket.io": "^4.8.1"},
+  "engines": {"node": ">=18"}
 }
